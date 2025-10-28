@@ -48,6 +48,35 @@ def neuron_main():
         print(f"   {x_new[0]} × 2 = {y_pred:.3f}  (correto seria: {x_new[0] * 2})")
     print("   👀 Viu? Agora ele GENERALIZA linearmente (sem saturar).")
 
+def mlp_main():
+    import random
+    from learning.mlp import MultiplicationNet
+    random.seed(7)
+
+    # Treinamos cobrindo magnitudes de 1e-3 a 1e3, mas EXCLUINDO a banda [30, 70]
+    # (o modelo não verá números nessa faixa de magnitude para mostrar generalização)
+    model = MultiplicationNet(hidden=24, seed=123).fit(
+        n_samples=30000,
+        mag_range=(1e-3, 1e3),
+        exclude_band=(30.0, 70.0),   # faixa “segurada” para teste
+        epochs=800,
+        lr=0.02,
+        verbose_every=100
+    )
+
+    tests = [
+        (10.0, 100.0),           # fora da banda excluída, mas não visto como par
+        (45.0, 2.0),             # 45 está NA banda excluída -> rede não viu esta magnitude
+        (0.03, -700.0),          # sinais mistos e grandezas distantes
+        (-1e-6, 3e5),            # escalas extremas
+        (0.0, 123.0),            # zero (caso exato)
+        (-123.0, -456.0),        # produto positivo com sinais negativos
+        (1e-3, 1e3),             # extremos da faixa
+    ]
+
+    for x, z in tests:
+        y_hat = model.predict(x, z)
+        print(f"{x} * {z} ≈ {y_hat:.6g}    (correto: {x*z:.6g})    erro abs: {abs(y_hat - x*z):.6g}")
 
 def neural_network_main():
     from learning.neural_network import NeuralNetwork
@@ -413,7 +442,8 @@ def learning():
 
 
 if __name__ == "__main__":
-    neuron_main()
+    #neuron_main()
+    mlp_main()
     #neural_network_main()
     #learning()
     #generative_network_main()
